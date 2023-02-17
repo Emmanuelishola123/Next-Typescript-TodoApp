@@ -1,91 +1,82 @@
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from './page.module.css'
+"use client";
 
-const inter = Inter({ subsets: ['latin'] })
+import { useState, useEffect } from 'react'
+import { TodoList, CreateTodoForm } from "@/components";
+import { Box, Container, Typography, Fab, Grid } from "@mui/material";
+import AddIcon from '@mui/icons-material/Add';
+import { getAllTodosApi, updateTodoApi, deleteTodoApi, createTodoApi} from '../service/todoApis'
 
 export default function Home() {
+  const [todos, setTodos] = useState([])
+
+
+  const getTodos = async () => {
+    try {
+      const {todos} = await getAllTodosApi()
+      console.log({todos})
+      setTodos(todos)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const createTodo = async (t: string) => {
+    try {
+      const newTodos = [...todos]
+      const data = await createTodoApi({todo: t, completed: false, userId: 5})
+      newTodos.unshift(data)
+      setTodos(newTodos)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+
+  const updateTodo = async (id: number, completed: boolean) => {
+    try {
+      const newTodos = [...todos]
+      const todoIndex = newTodos.findIndex(todo => todo.id === id)
+      newTodos[todoIndex].completed = !newTodos[todoIndex].completed
+      setTodos(newTodos)
+      await updateTodoApi(id, completed)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  const deleteTodo = async (id: number) => {
+    try {
+      let newTodos = todos.filter(todo => todo.id != id)
+      setTodos(newTodos)
+      await deleteTodoApi(id)
+    } catch (error) {
+      console.log(error)
+    }
+  }
+
+  useEffect( () => {
+    getTodos()
+  }, [])
+
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    <Container sx={{ mx: 'auto'}}>
+      <Typography variant="h2" sx={{ mb: 4, fontSize: '40px', fontWeight: 700}}>
+        Todo List
+      </Typography>
+ 
+        <Grid container spacing={4}>
+          <Grid item xs={12} md={7}>
+             {todos?.length > 0 ? <TodoList todos={todos} deleteTodo={deleteTodo} updateTodo={updateTodo}  />:
+              <Typography variant="body1" sx={{ fontSize: '24px', textAlign: 'center', fontWeight: 500}}>
+              No Todo at the moment
+            </Typography>
+             }
+          </Grid>
+          <Grid item xs={12} md={5}>
+              <CreateTodoForm createTodo={createTodo}   />
+          </Grid>
+      </Grid>     
+    </Container>
+  );
 }
